@@ -89,7 +89,9 @@ func main() {
 	router.Use(middleware.WithValue(DB_KEY, db))
 
 	// Register handlers
-	RegisterHandlers(router)
+	router.Get("/", handleGetRoot)
+	router.Get("/headers", handleGetHeaders)
+	router.Get("/health", handleGetHealth(checkDBHealth(db)))
 
 	// Start server
 	log.Printf("Starting server on port 8080\n")
