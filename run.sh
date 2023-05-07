@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Set environment variables
-export DB_SERVER="SQL URL"
-export DB_PORT="SQL PORT"
-export DB_USER="SQL USER"
-export DB_PASSWORD="SQL PASS"
-export DB_NAME="SQL DB"
+# This script is used to run the server locally for testing purposes
+
+# Load environment variables from the .env file
+source .env
 
 # Run the Go application
 go run -ldflags "-X main.version=latest" ./src/

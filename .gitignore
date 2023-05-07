@@ -20,6 +20,5 @@
 # Go workspace file
 go.work
 
-HANDY.md
-run.sh
-build.sh
+# Ignore Environment Variables
+.env

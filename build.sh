@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Set environment variables
-export DB_SERVER="SQL URL"
-export DB_PORT="SQL PORT"
-export DB_USER="SQL USER"
-export DB_PASSWORD="SQL PASS"
-export DB_NAME="SQL DB"
+# This script is used to build and run the server locally using Docker for 
+# testing purposes prior to pushing to Azure Container Registry
+
+# Load environment variables from the .env file
+source .env
 
 # Read the version from the command line argument or default to "latest"
 version="${1:-latest}"
@@ -25,4 +24,5 @@ docker run \
     --env DB_USER="$DB_USER" \
     --env DB_PASSWORD="$DB_PASSWORD" \
     --env DB_NAME="$DB_NAME" \
+    --env APP_SECRET="$APP_SECRET" \
     go-web-starter:$version

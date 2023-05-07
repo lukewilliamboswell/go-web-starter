@@ -15,12 +15,17 @@ import (
 	"github.com/go-chi/chi/middleware"
 )
 
+type ContextKey string
+
+// Constants
+const DB_KEY ContextKey = "db"
+
 // Version is changed at build time
 var version string = ""
 
 // These variables read from environment variables
 var (
-	secret   string = "shhh my secret secret"
+	secret   string
 	db       *sql.DB
 	server   string
 	port     int
@@ -43,6 +48,12 @@ func main() {
 	user = os.Getenv("DB_USER")
 	password = os.Getenv("DB_PASSWORD")
 	database = os.Getenv("DB_NAME")
+	secret = os.Getenv("APP_SECRET")
+
+	// Check secret environment variable has been set
+	if secret == "" {
+		log.Fatalf("Error secret not set\n")
+	}
 
 	// Convert port string to integer
 	port, err := strconv.Atoi(portStr)
@@ -73,6 +84,7 @@ func main() {
 
 	// Add middleware
 	router.Use(middleware.Logger)
+	router.Use(databaseMiddleware(db))
 
 	// Register handlers
 	RegisterHandlers(router)
@@ -82,5 +94,16 @@ func main() {
 	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		log.Fatalf("Fatal error starting server: %s\n", err.Error())
+	}
+}
+
+// Add the database handle to the request context so that it can be used by
+// handlers further down the chain
+func databaseMiddleware(db *sql.DB) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), DB_KEY, db)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
 }
