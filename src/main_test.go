@@ -11,7 +11,7 @@ import (
 func TestAppRouter(t *testing.T) {
 
 	req, _ := http.NewRequest("GET", "/", nil)
-	rr := executeRequest(req, hanldleGetRoot)
+	rr := executeRequest(req, handleGetRoot)
 
 	// check the response status code
 	if rr.Code != http.StatusOK {
@@ -19,7 +19,7 @@ func TestAppRouter(t *testing.T) {
 	}
 
 	// check the response body
-	if rr.Body.String() != "Hello, World!" {
+	if rr.Body.String() != "Hello, World!\n" {
 		t.Errorf("unexpected body")
 	}
 }
