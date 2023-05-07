@@ -84,7 +84,9 @@ func main() {
 
 	// Add middleware
 	router.Use(middleware.Logger)
-	router.Use(databaseMiddleware(db))
+
+	// Add database handle to request context
+	router.Use(middleware.WithValue(DB_KEY, db))
 
 	// Register handlers
 	RegisterHandlers(router)
@@ -94,16 +96,5 @@ func main() {
 	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		log.Fatalf("Fatal error starting server: %s\n", err.Error())
-	}
-}
-
-// Add the database handle to the request context so that it can be used by
-// handlers further down the chain
-func databaseMiddleware(db *sql.DB) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), DB_KEY, db)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
 	}
 }
