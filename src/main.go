@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+
+	"github.com/lukewilliamboswell/go-web-starter/src/user"
 )
 
 type ContextKey string
@@ -27,9 +29,9 @@ var version string = ""
 var (
 	secret   string
 	db       *sql.DB
-	server   string
-	port     int
-	user     string
+	dbServer string
+	dbPort   int
+	dbUser   string
 	password string
 	database string
 )
@@ -43,9 +45,9 @@ func main() {
 	}
 
 	// Get server details from environment variables
-	server = os.Getenv("DB_SERVER")
+	dbServer = os.Getenv("DB_SERVER")
 	portStr := os.Getenv("DB_PORT")
-	user = os.Getenv("DB_USER")
+	dbUser = os.Getenv("DB_USER")
 	password = os.Getenv("DB_PASSWORD")
 	database = os.Getenv("DB_NAME")
 	secret = os.Getenv("APP_SECRET")
@@ -56,14 +58,14 @@ func main() {
 	}
 
 	// Convert port string to integer
-	port, err := strconv.Atoi(portStr)
+	dbPort, err := strconv.Atoi(portStr)
 	if err != nil {
 		log.Fatalf("Error converting port string to integer: %s\n", err.Error())
 	}
 
 	// Build connection string
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
-		server, user, password, port, database)
+		dbServer, dbUser, password, dbPort, database)
 
 	// Create connection pool
 	db, err = sql.Open("sqlserver", connString)
@@ -77,21 +79,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	log.Printf("Connected to DB %s:%d as %s\n", server, port, user)
+	log.Printf("Connected to DB %s:%d as %s\n", dbServer, dbPort, dbUser)
+
+	// Create repositories
+	userRepository := user.NewRepository(db)
+
+	// Create controllers
+	userController := user.NewController(userRepository)
 
 	// Create router
 	router := chi.NewRouter()
 
 	// Add middleware
 	router.Use(middleware.Logger)
+	router.Use(userController.UserAuthenticationMiddleware())
 
 	// Add database handle to request context
 	router.Use(middleware.WithValue(DB_KEY, db))
 
 	// Register handlers
 	router.Get("/", handleGetRoot)
-	router.Get("/headers", handleGetHeaders)
+	router.Get("/headers", handleGetHeaders) // TODO remove
 	router.Get("/health", handleGetHealth(checkDBHealth(db)))
+	userController.RegisterRoutes(router)
 
 	// Start server
 	log.Printf("Starting server on port 8080\n")

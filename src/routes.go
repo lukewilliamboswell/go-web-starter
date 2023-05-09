@@ -8,6 +8,7 @@ func handleGetRoot(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello, World!\n"))
 }
 
+// TODO REMOVE
 func handleGetHeaders(w http.ResponseWriter, r *http.Request) {
 	// print out all the request headers in response body
 	for name, headers := range r.Header {

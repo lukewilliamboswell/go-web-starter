@@ -10,7 +10,7 @@ import (
 
 // Returns a JSON response with the database status, version and timestamp
 // {"db":"Ok","version":"latest","timestamp":"2023-05-07T06:28:46Z"}
-func handleGetHealth(checkDBHealth func() bool) func(w http.ResponseWriter, r *http.Request) {
+func handleGetHealth(checkDBHealth func() bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// check database connection
