@@ -11,7 +11,7 @@ RUN go mod download
 RUN go mod verify
 
 # Copy the source code
-COPY ./src/*.go ./src/
+COPY . .
 
 # Declare the build argument
 ARG VERSION=latest

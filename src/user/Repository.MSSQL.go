@@ -20,13 +20,16 @@ func NewRepository(db *sql.DB) UserRepository {
 
 func createUserTable(db *sql.DB) {
 	const query = `
-	CREATE TABLE IF NOT EXISTS users (
-		id INT IDENTITY(1,1) PRIMARY KEY,
-		principal_id NVARCHAR(36) UNIQUE NOT NULL,
-		principal_name NVARCHAR(255) NOT NULL,
-		principal_provider NVARCHAR(255) NOT NULL,
-		principal_claims NVARCHAR(255) NOT NULL
-	);
+	IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'users')
+	BEGIN
+		CREATE TABLE users (
+			id INT IDENTITY(1,1) PRIMARY KEY,
+			principal_id NVARCHAR(36) UNIQUE NOT NULL,
+			principal_name NVARCHAR(255) NOT NULL,
+			principal_provider NVARCHAR(255) NOT NULL,
+			principal_claims NVARCHAR(255) NOT NULL
+		);
+	END
 	`
 	_, err := db.Exec(query)
 	if err != nil {
