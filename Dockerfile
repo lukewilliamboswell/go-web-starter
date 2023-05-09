@@ -26,7 +26,8 @@ FROM builder AS tester
 RUN go test -v ./...
 
 # Build the final app image
-FROM scratch
+# FROM scratch <-- This is the smallest image possible but cannot connect a shell for debugging
+FROM alpine:latest
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/app .

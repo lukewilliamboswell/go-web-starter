@@ -77,7 +77,6 @@ func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http
 
 				err = c.repo.InsertUser(newUser)
 				if err != nil {
-					log.Fatal(err)
 					http.Error(w, "error inserting user", http.StatusInternalServerError)
 					return
 				}

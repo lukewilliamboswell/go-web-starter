@@ -33,7 +33,7 @@ func createUserTable(db *sql.DB) {
 	`
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Fatal("failed to create user table: %w", err)
+		log.Print("failed to create user table: %w", err)
 	}
 }
 
