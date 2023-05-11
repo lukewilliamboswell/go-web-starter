@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"database/sql"
 	"embed"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb"
 
@@ -63,7 +65,7 @@ func main() {
 	}
 
 	// Convert port string to integer
-	dbPort, err := strconv.Atoi(portStr)
+	dbPort, err = strconv.Atoi(portStr)
 	if err != nil {
 		log.Fatalf("Error converting port string to integer: %s\n", err.Error())
 	}
@@ -121,11 +123,19 @@ func main() {
 	router.Mount("/api", api)
 
 	// Serve static files
-	fs := http.FileServer(http.FS(staticFiles))
-
 	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = "/public" + r.URL.Path
-		fs.ServeHTTP(w, r)
+
+		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			w.Header().Set("Content-Encoding", "gzip")
+			gz := gzip.NewWriter(w)
+			defer gz.Close()
+
+			gzw := gzipResponseWriter{ResponseWriter: w, Writer: gz}
+			http.FileServer(http.FS(staticFiles)).ServeHTTP(gzw, r)
+		} else {
+			http.FileServer(http.FS(staticFiles)).ServeHTTP(w, r)
+		}
 	})
 
 	// Start server
@@ -134,4 +144,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("Fatal error starting server: %s\n", err.Error())
 	}
+}
+
+type gzipResponseWriter struct {
+	http.ResponseWriter
+	*gzip.Writer
+}
+
+func (w gzipResponseWriter) Header() http.Header {
+	return w.ResponseWriter.Header()
+}
+
+func (w gzipResponseWriter) Write(b []byte) (int, error) {
+	return w.Writer.Write(b)
+}
+
+func (w gzipResponseWriter) WriteHeader(statusCode int) {
+	w.ResponseWriter.WriteHeader(statusCode)
 }

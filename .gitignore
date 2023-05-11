@@ -22,3 +22,5 @@ go.work
 
 # Ignore Environment Variables
 .env
+
+.DS_Store
