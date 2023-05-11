@@ -48,10 +48,17 @@ func (c *Controller) GetUsers() http.HandlerFunc {
 // ensures the `X-Ms-Client-Principal-Id` header is present
 // and check if the user is in the database
 func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http.Handler {
-
-	// Return middleware function
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// Only run this middleware if the request is to a route on /api/*
+			// if chi.RouteContext(r.Context()).RoutePattern() == "/api/*" {
+
+			// TODO log the request id i.e.
+			// `X-Request-Id: 66ed202c-45ec-4ec9-b83a-6a4a4c540796`
+			// when there is a server error
+
+			log.Println("RUNNING IN HERE")
 
 			// Get the user ID from the request header
 			userID := r.Header.Get("X-Ms-Client-Principal-Id")
@@ -72,11 +79,11 @@ func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http
 					PrincipalId:       r.Header.Get("X-Ms-Client-Principal-Id"),
 					PrincipalName:     r.Header.Get("X-Ms-Client-Principal-Name"),
 					PrincipalProvider: r.Header.Get("X-Ms-Client-Principal-Idp"),
-					PrincipalClaims:   r.Header.Get("X-Ms-Client-Principal"),
 				}
 
 				err = c.repo.InsertUser(newUser)
 				if err != nil {
+					log.Print("error inserting user: %w", err)
 					http.Error(w, "error inserting user", http.StatusInternalServerError)
 					return
 				}
@@ -96,6 +103,12 @@ func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http
 				next.ServeHTTP(w, r)
 
 			}
+
+			// }
+
+			// // Call the next handler in the chain
+			// next.ServeHTTP(w, r)
+
 		})
 	}
 }

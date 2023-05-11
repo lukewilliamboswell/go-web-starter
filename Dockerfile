@@ -29,6 +29,9 @@ RUN go test -v ./...
 # FROM scratch <-- This is the smallest image possible but cannot connect a shell for debugging
 FROM alpine:latest
 
+# May be useful for debugging installs curl utility
+# RUN apk add --no-cache curl
+
 # Copy the binary from the builder stage
 COPY --from=builder /app/app .
 

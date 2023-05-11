@@ -26,8 +26,7 @@ func createUserTable(db *sql.DB) {
 			id INT IDENTITY(1,1) PRIMARY KEY,
 			principal_id NVARCHAR(36) UNIQUE NOT NULL,
 			principal_name NVARCHAR(255) NOT NULL,
-			principal_provider NVARCHAR(255) NOT NULL,
-			principal_claims NVARCHAR(255) NOT NULL
+			principal_provider NVARCHAR(255) NOT NULL
 		);
 	END
 	`
@@ -42,8 +41,7 @@ func (repo *UserMSSQL) GetUsers() ([]User, error) {
 	SELECT 
 		principal_id, 
 		principal_name, 
-		principal_provider, 
-		principal_claims 
+		principal_provider
 	FROM
 		users
 	`
@@ -60,7 +58,6 @@ func (repo *UserMSSQL) GetUsers() ([]User, error) {
 			&user.PrincipalId,
 			&user.PrincipalName,
 			&user.PrincipalProvider,
-			&user.PrincipalClaims,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user data: %w", err)
@@ -84,8 +81,7 @@ func (repo *UserMSSQL) GetUser(principalID string) (User, error) {
 	SELECT 
 		principal_id, 
 		principal_name, 
-		principal_provider, 
-		principal_claims 
+		principal_provider
 	FROM 
 		users 
 	WHERE 
@@ -98,7 +94,6 @@ func (repo *UserMSSQL) GetUser(principalID string) (User, error) {
 		&user.PrincipalId,
 		&user.PrincipalName,
 		&user.PrincipalProvider,
-		&user.PrincipalClaims,
 	)
 	if err == sql.ErrNoRows {
 		// No user found
@@ -118,8 +113,8 @@ func (repo *UserMSSQL) InsertUser(user User) error {
 	const query = `
 	IF NOT EXISTS (SELECT 1 FROM users WHERE principal_id = @principal_id)
 	BEGIN
-		INSERT INTO users (principal_id, principal_name, principal_provider, principal_claims)
-		VALUES (@principal_id, @principal_name, @principal_provider, @principal_claims)
+		INSERT INTO users (principal_id, principal_name, principal_provider)
+		VALUES (@principal_id, @principal_name, @principal_provider)
 	END
 	`
 	_, err := repo.db.Exec(
@@ -127,7 +122,6 @@ func (repo *UserMSSQL) InsertUser(user User) error {
 		sql.Named("principal_id", user.PrincipalId),
 		sql.Named("principal_name", user.PrincipalName),
 		sql.Named("principal_provider", user.PrincipalProvider),
-		sql.Named("principal_claims", user.PrincipalClaims),
 	)
 
 	if err != nil {

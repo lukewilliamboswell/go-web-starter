@@ -92,7 +92,6 @@ func main() {
 
 	// Add middleware
 	router.Use(middleware.Logger)
-	router.Use(userController.UserAuthenticationMiddleware())
 
 	// Add database handle to request context
 	router.Use(middleware.WithValue(DB_KEY, db))
@@ -101,7 +100,19 @@ func main() {
 	router.Get("/", handleGetRoot)
 	router.Get("/headers", handleGetHeaders) // TODO remove
 	router.Get("/health", handleGetHealth(checkDBHealth(db)))
-	userController.RegisterRoutes(router)
+
+	// Create a API router
+	api := chi.NewRouter()
+
+	// Ensure only Authenticated users can access the API. Note that requests
+	// from Azure, such as health checks, will not have user credentials
+	api.Use(userController.UserAuthenticationMiddleware())
+
+	// Register API routes
+	userController.RegisterRoutes(api)
+
+	// Mount API router
+	router.Mount("/api", api)
 
 	// Start server
 	log.Printf("Starting server on port 8080\n")
