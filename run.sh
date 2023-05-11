@@ -5,6 +5,6 @@
 # Load environment variables from the .env file
 source .env
 
-# Run the Go application
-go run -ldflags "-X main.version=latest" ./src/
+# Run the Go application without API authentication
+go run -ldflags "-X main.version=dev" ./src/
 

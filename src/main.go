@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
+	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +18,9 @@ import (
 
 	"github.com/lukewilliamboswell/go-web-starter/src/user"
 )
+
+//go:embed public/*
+var staticFiles embed.FS
 
 type ContextKey string
 
@@ -97,7 +102,6 @@ func main() {
 	router.Use(middleware.WithValue(DB_KEY, db))
 
 	// Register handlers
-	router.Get("/", handleGetRoot)
 	router.Get("/headers", handleGetHeaders) // TODO remove
 	router.Get("/health", handleGetHealth(checkDBHealth(db)))
 
@@ -106,13 +110,23 @@ func main() {
 
 	// Ensure only Authenticated users can access the API. Note that requests
 	// from Azure, such as health checks, will not have user credentials
-	api.Use(userController.UserAuthenticationMiddleware())
+	if version != "dev" {
+		api.Use(userController.UserAuthenticationMiddleware())
+	}
 
 	// Register API routes
 	userController.RegisterRoutes(api)
 
 	// Mount API router
 	router.Mount("/api", api)
+
+	// Serve static files
+	fs := http.FileServer(http.FS(staticFiles))
+
+	router.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "/public" + r.URL.Path
+		fs.ServeHTTP(w, r)
+	})
 
 	// Start server
 	log.Printf("Starting server on port 8080\n")
