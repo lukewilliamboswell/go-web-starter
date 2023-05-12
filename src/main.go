@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"embed"
-	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -100,6 +99,20 @@ func main() {
 	// Add middleware
 	router.Use(middleware.Logger)
 
+	// If this is a development build, add middleware to set the user header
+	if version == "dev" {
+		router.Use(devMiddlewareSetUserHeader)
+	}
+
+	// Add middleware to authenticate user, except for the following routes
+	exceptions := []string{
+		"/health",
+		"/registered.html",
+		"/styles.css",
+		"/favicon.ico",
+	}
+	router.Use(userController.UserAuthenticationMiddleware(version, exceptions))
+
 	// Add database handle to request context
 	router.Use(middleware.WithValue(DB_KEY, db))
 
@@ -109,12 +122,6 @@ func main() {
 
 	// Create a API router
 	api := chi.NewRouter()
-
-	// Ensure only Authenticated users can access the API. Note that requests
-	// from Azure, such as health checks, will not have user credentials
-	if version != "dev" {
-		api.Use(userController.UserAuthenticationMiddleware())
-	}
 
 	// Register API routes
 	userController.RegisterRoutes(api)
@@ -161,4 +168,14 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 
 func (w gzipResponseWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+// Set the X-Ms-Client-Principal-Id for development builds
+func devMiddlewareSetUserHeader(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		r.Header.Set("X-Ms-Client-Principal-Id", "bdd00b62-f7b6-40b4-b78f-d4b30f9dfe15")
+
+		next.ServeHTTP(w, r)
+	})
 }

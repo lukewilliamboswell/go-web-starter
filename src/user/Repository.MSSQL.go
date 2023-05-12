@@ -26,8 +26,9 @@ func createUserTable(db *sql.DB) {
 			id INT IDENTITY(1,1) PRIMARY KEY,
 			principal_id NVARCHAR(36) UNIQUE NOT NULL,
 			principal_name NVARCHAR(255) NOT NULL,
-			principal_provider NVARCHAR(255) NOT NULL
-		);
+			principal_provider NVARCHAR(255) NOT NULL,
+			access_level INT NOT NULL DEFAULT 0
+		);	
 	END
 	`
 	_, err := db.Exec(query)
@@ -41,7 +42,8 @@ func (repo *UserMSSQL) GetUsers() ([]User, error) {
 	SELECT 
 		principal_id, 
 		principal_name, 
-		principal_provider
+		principal_provider,
+		access_level
 	FROM
 		users
 	`
@@ -58,6 +60,7 @@ func (repo *UserMSSQL) GetUsers() ([]User, error) {
 			&user.PrincipalId,
 			&user.PrincipalName,
 			&user.PrincipalProvider,
+			&user.AccessLevel,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user data: %w", err)
@@ -81,7 +84,8 @@ func (repo *UserMSSQL) GetUser(principalID string) (User, error) {
 	SELECT 
 		principal_id, 
 		principal_name, 
-		principal_provider
+		principal_provider,
+		access_level
 	FROM 
 		users 
 	WHERE 
@@ -94,6 +98,7 @@ func (repo *UserMSSQL) GetUser(principalID string) (User, error) {
 		&user.PrincipalId,
 		&user.PrincipalName,
 		&user.PrincipalProvider,
+		&user.AccessLevel,
 	)
 	if err == sql.ErrNoRows {
 		// No user found

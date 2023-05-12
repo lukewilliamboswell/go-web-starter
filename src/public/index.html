@@ -37,12 +37,12 @@
                     data.forEach((user) => {
                         const userDiv = document.createElement("div");
                         userDiv.classList.add("list-group-item");
-                        userDiv.innerHTML = `<div class="user list-group-item">
+                        userDiv.innerHTML = `
                             <span class="user-name">Name: ${user["X-Ms-Client-Principal-Name"]}</span>
                             <br>
                             Provider: ${user["X-Ms-Client-Principal-Idp"]}
-                            ID: ${user["X-Ms-Client-Principal-Id"]},
-                        </div>
+                            <br>
+                            ID: ${user["X-Ms-Client-Principal-Id"]}
                         `;
                         
                         usersDiv.appendChild(userDiv);

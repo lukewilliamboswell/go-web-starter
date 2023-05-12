@@ -1,12 +1,17 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
 )
+
+type contextKey string
+
+const userKey contextKey = "user"
 
 type Controller struct {
 	repo UserRepository
@@ -47,23 +52,23 @@ func (c *Controller) GetUsers() http.HandlerFunc {
 // Middleware which creates the users table if it doesn't exist, and then
 // ensures the `X-Ms-Client-Principal-Id` header is present
 // and check if the user is in the database
-func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http.Handler {
+func (c *Controller) UserAuthenticationMiddleware(version string, exceptions []string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			// Only run this middleware if the request is to a route on /api/*
-			// if chi.RouteContext(r.Context()).RoutePattern() == "/api/*" {
-
-			// TODO log the request id i.e.
-			// `X-Request-Id: 66ed202c-45ec-4ec9-b83a-6a4a4c540796`
-			// when there is a server error
-
-			log.Println("RUNNING IN HERE")
+			// Check if the current request path matches any of the exceptions
+			for _, path := range exceptions {
+				if r.URL.Path == path {
+					// Skip the middleware and call the next handler directly
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
 
 			// Get the user ID from the request header
 			userID := r.Header.Get("X-Ms-Client-Principal-Id")
 			if userID == "" {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				http.Error(w, "Expected X-Ms-Client-Principal-Id header to be set", http.StatusUnauthorized)
 				return
 			}
 
@@ -88,27 +93,29 @@ func (c *Controller) UserAuthenticationMiddleware() func(next http.Handler) http
 					return
 				}
 
-				// TODO
+				http.Redirect(w, r, "/registered.html", http.StatusSeeOther)
+
+			} else if user.AccessLevel == DENY_ACCESS {
+
 				// Redirect user to let them know they have been registered
-				// http.Redirect(w, r, "/registered", http.StatusSeeOther)
-				log.Printf("User registered: %+v", user)
+				if r.URL.Path == "/api/*" {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				} else {
+					http.Redirect(w, r, "/registered.html", http.StatusSeeOther)
+				}
 
 			} else {
 
-				// TODO
-				// User found
-				log.Printf("User ID exists: %+v", user.PrincipalId)
+				// Add the User object to the request context
+				ctx := context.WithValue(r.Context(), userKey, user)
+
+				// Create a new request with the updated context
+				r = r.WithContext(ctx)
 
 				// Call the next handler in the chain
 				next.ServeHTTP(w, r)
 
 			}
-
-			// }
-
-			// // Call the next handler in the chain
-			// next.ServeHTTP(w, r)
-
 		})
 	}
 }

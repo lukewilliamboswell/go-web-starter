@@ -11,4 +11,15 @@ type User struct {
 
 	// The name of the identity provider used by App Service Authentication.
 	PrincipalProvider string `json:"X-Ms-Client-Principal-Idp"`
+
+	// Application Access Level
+	AccessLevel AuthCode `json:"access_level"`
 }
+
+type AuthCode int
+
+const (
+	DENY_ACCESS  AuthCode = 0
+	USER_ACCESS  AuthCode = 1
+	ADMIN_ACCESS AuthCode = 2
+)

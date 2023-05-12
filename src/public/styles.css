@@ -1,14 +1,7 @@
 body {
     background-color: #ffffff;
 }
-#users {
-    background-color: #e9ecef;
-    border-radius: 5px;
-    padding: 10px;
-}
-.user {
-    color: #343a40;
-}
+
 .user-name {
     font-weight: bold;
     color: #007bff;
